@@ -18,7 +18,8 @@ main {
 
 .search-container {
     display: flex;
-    margin-bottom: 20px;
+    /*margin-bottom: 20px;*/
+	position: relative;
 }
 
 #movieSearch {
@@ -36,4 +37,25 @@ button {
 
 #movieDetails {
 	text-align: center;
+}
+
+.autocomplete-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: #fff;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.autocomplete-suggestion {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.autocomplete-suggestion:hover {
+    background-color: #f2f2f2;
 }
