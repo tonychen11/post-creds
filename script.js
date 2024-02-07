@@ -1,19 +1,16 @@
 async function searchMovie() {
-	try {
+	try {		
 		// Get movie title from search bar
 		const movieSearchInput = document.getElementById('movieSearch');
 		const movieTitle = movieSearchInput.value;
 
 		// Display the movie details in the #movieDetails div
 		const movieDetailsContainer = document.getElementById('movieDetails');
+		movieDetailsContainer.innerHTML = '';
 		
 		const movieIdInfo = await fetchMovieId(movieTitle);
 		
 		if (movieIdInfo.results.length == 0){
-			let errorMsg = "Cannot find this movie";
-			movieDetailsContainer.innerHTML = `
-			<p>${errorMsg}</p>
-			`;
 			return;
 		}
 		
@@ -33,8 +30,7 @@ async function searchMovie() {
 		}
 		
 		movieDetailsContainer.innerHTML = `
-			<p>${hasPostCreds}</p>
-			`;
+			<p>${hasPostCreds}</p>`;
 	} 
 	catch (error)
 	{
@@ -66,12 +62,58 @@ function fetchMoviePostCreds(movieId) {
 // Event listener for the Enter key press
 document.addEventListener('DOMContentLoaded', function () {
     const movieSearchInput = document.getElementById('movieSearch');
-    movieSearchInput.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') {
-            searchMovie();
+	const autocompleteResults = document.getElementById('autocompleteResults');
+
+	movieSearchInput.addEventListener('input', function () {
+        const searchQuery = movieSearchInput.value.trim();
+        if (searchQuery.length === 0) {
+            autocompleteResults.innerHTML = ''; 
+            return;
         }
+			
+        fetchMovieId(searchQuery)
+            .then(results => {
+                displayAutocompleteResults(results);
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    });
+
+	movieSearchInput.addEventListener('keydown', function (event) {
+		if (event.key === 'Enter') {
+			searchMovie();
+			clearSuggestions();
+		}
     });
 });
+
+
+function displayAutocompleteResults(results) {
+    const autocompleteResults = document.getElementById('autocompleteResults');
+	const movieSearchInput = document.getElementById('movieSearch');
+
+    autocompleteResults.innerHTML = ''; 
+
+	
+	results.results.forEach(result => {
+		const suggestion = document.createElement('div');
+		suggestion.classList.add('autocomplete-suggestion');
+		suggestion.textContent = result.original_title;
+		suggestion.addEventListener('click', function () {
+			movieSearchInput.value = result.original_title;;
+			clearSuggestions();
+		});
+			
+		autocompleteResults.appendChild(suggestion);
+	});
+}
+
+
+function clearSuggestions() {
+    const autocompleteResults = document.getElementById('autocompleteResults');
+    autocompleteResults.innerHTML = '';
+}
 
 var bearer_token = config.BEARER_TOKEN;
 
