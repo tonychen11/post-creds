@@ -1,36 +1,47 @@
+var bearerToken = config.BEARER_TOKEN;
+var afterCreditsId = 179430;
+
+const options = {
+  method: 'GET',
+  headers: {
+    accept: 'application/json',
+    Authorization: bearerToken
+  }
+};
+
 async function searchMovie() {
 	try {		
 		// Get movie title from search bar
 		const movieSearchInput = document.getElementById('movieSearch');
 		const movieTitle = movieSearchInput.value;
+		
+		if (movieTitle.length == 0){
+			return;
+		}
 
 		// Display the movie details in the #movieDetails div
 		const movieDetailsContainer = document.getElementById('movieDetails');
-		movieDetailsContainer.innerHTML = '';
+		clearSuggestions(movieDetailsContainer);
 		
 		const movieIdInfo = await fetchMovieId(movieTitle);
 		
-		if (movieIdInfo.results.length == 0){
-			return;
-		}
-		
 		const movieId = movieIdInfo.results[0].id;
+		const movieName = movieIdInfo.results[0].original_title;
 		
 		const postCredsInfo = await fetchMoviePostCreds(movieId);
 		
-		const postCreds = postCredsInfo.keywords.some(keyword => keyword.id === 179430);
+		const postCreds = postCredsInfo.keywords.some(keyword => keyword.id === afterCreditsId);
 		//const hasPostCreds = postCreds ? "Yes" : "No";
 		let hasPostCreds;
 
 		if(postCreds){
-			hasPostCreds = "YES, there's a post credits scene, stick around!";
+			hasPostCreds = `YES, ${movieName} has a post credits scene, stick around!`;
 		}
 		else{
-			hasPostCreds = "NO post credits scene, feel free to leave!";
+			hasPostCreds = `NO post credits scene for ${movieName}, feel free to leave!`;
 		}
 		
-		movieDetailsContainer.innerHTML = `
-			<p>${hasPostCreds}</p>`;
+		movieDetailsContainer.innerHTML = `<p>${hasPostCreds}</p>`;
 	} 
 	catch (error)
 	{
@@ -63,46 +74,64 @@ function fetchMoviePostCreds(movieId) {
 document.addEventListener('DOMContentLoaded', function () {
     const movieSearchInput = document.getElementById('movieSearch');
 	const autocompleteResults = document.getElementById('autocompleteResults');
+	const movieDetailsContainer = document.getElementById('movieDetails');
 
+	//entering a movie title
 	movieSearchInput.addEventListener('input', function () {
-        const searchQuery = movieSearchInput.value.trim();
-        if (searchQuery.length === 0) {
-            autocompleteResults.innerHTML = ''; 
-            return;
-        }
-			
-        fetchMovieId(searchQuery)
-            .then(results => {
-                displayAutocompleteResults(results);
-            })
-            .catch(error => {
-                console.error(error);
-            });
-    });
+		clearSuggestions(movieDetailsContainer);
+		searchAndDisplay(movieSearchInput, autocompleteResults)
+	});
+	
+	//clicking a dropdown option
+	movieSearchInput.addEventListener('click', function () {
+		searchAndDisplay(movieSearchInput, autocompleteResults)
+	});
 
+	//allow enter to submit
 	movieSearchInput.addEventListener('keydown', function (event) {
 		if (event.key === 'Enter') {
 			searchMovie();
-			clearSuggestions();
+			clearSuggestions(autocompleteResults);
 		}
     });
+	
+	//handle clicking outside of search bar and autocomplete results
+	document.addEventListener('click', function (event) {
+        if (!movieSearchInput.contains(event.target) && !autocompleteResults.contains(event.target)) {
+            clearSuggestions(autocompleteResults);
+        }
+    });
+
 });
 
 
-function displayAutocompleteResults(results) {
-    const autocompleteResults = document.getElementById('autocompleteResults');
-	const movieSearchInput = document.getElementById('movieSearch');
+function searchAndDisplay (movieSearchInput, autocompleteResults) {
+	const searchQuery = movieSearchInput.value.trim();
+	if (searchQuery.length === 0) {
+		autocompleteResults.innerHTML = ''; 
+		return;
+	}
+		
+	fetchMovieId(searchQuery)
+		.then(results => {
+			displayAutocompleteResults(results, movieSearchInput, autocompleteResults);
+		})
+		.catch(error => {
+			console.error(error);
+		});
+}
 
-    autocompleteResults.innerHTML = ''; 
+function displayAutocompleteResults(results, movieSearchInput, autocompleteResults) {
+    clearSuggestions(autocompleteResults);
 
-	
 	results.results.forEach(result => {
 		const suggestion = document.createElement('div');
 		suggestion.classList.add('autocomplete-suggestion');
 		suggestion.textContent = result.original_title;
 		suggestion.addEventListener('click', function () {
 			movieSearchInput.value = result.original_title;;
-			clearSuggestions();
+			clearSuggestions(autocompleteResults);
+			movieSearchInput.focus();
 		});
 			
 		autocompleteResults.appendChild(suggestion);
@@ -110,17 +139,6 @@ function displayAutocompleteResults(results) {
 }
 
 
-function clearSuggestions() {
-    const autocompleteResults = document.getElementById('autocompleteResults');
+function clearSuggestions(autocompleteResults) {
     autocompleteResults.innerHTML = '';
 }
-
-var bearer_token = config.BEARER_TOKEN;
-
-const options = {
-  method: 'GET',
-  headers: {
-    accept: 'application/json',
-    Authorization: bearer_token
-  }
-};
